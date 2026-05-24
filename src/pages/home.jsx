@@ -1,18 +1,16 @@
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import Features from "../components/Features";
-import BackgroundEffects from "../components/BackgroundEffects";
+import BackgroundGrid from "../components/BackgroundGrid";
 
 export default function Home() {
   return (
-    <div className="relative overflow-hidden bg-slate-950 text-white min-h-screen">
-      <BackgroundEffects />
+    <div className="relative bg-[#020617] text-white overflow-hidden min-h-screen">
+      <BackgroundGrid />
 
       <Navbar />
 
       <main className="relative z-10">
         <Hero />
-        <Features />
       </main>
     </div>
   );
