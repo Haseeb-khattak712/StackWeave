@@ -11,7 +11,11 @@
   },
   "dependencies": {
     "axios": "^1.16.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "framer-motion": "^12.40.0",
+    "groq-sdk": "^1.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-icons": "^5.6.0",
@@ -29,5 +33,18 @@
     "globals": "^17.6.0",
     "tailwindcss": "^4.3.0",
     "vite": "^8.0.12"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Haseeb-khattak712/StackWeave.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Haseeb-khattak712/StackWeave/issues"
+  },
+  "homepage": "https://github.com/Haseeb-khattak712/StackWeave#readme"
 }

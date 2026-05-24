@@ -58,6 +58,13 @@ export default function DashboardLayout() {
           </button>
 
           <button
+            onClick={() => navigate("/dashboard/ai")}
+            className="text-left hover:text-white transition-colors"
+          >
+            AI Generator
+          </button>
+
+          <button
             className="text-red-400 mt-10 text-left hover:text-red-300 transition-colors"
             onClick={handleLogout}
           >
