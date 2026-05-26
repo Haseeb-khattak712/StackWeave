@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { generatePortfolio } from "../../services/aiGenerator";
+import { generatePortfolio } from "../../services/aigenerator";
 import { loadFromStorage } from "../../services/storage";
+import { saveOutput } from "../../services/saveOutput";
 
 export default function AIGenerator() {
   const [result, setResult] = useState(null);
@@ -29,6 +30,13 @@ export default function AIGenerator() {
 
       // generate AI response
       const output = await generatePortfolio(profile, projects);
+
+      // SAVE TO BACKEND
+      await saveOutput({
+        profile,
+        result: output,
+        createdAt: new Date().toISOString(),
+      });
 
       setResult(output);
     } catch (err) {

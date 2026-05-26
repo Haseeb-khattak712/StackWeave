@@ -6,6 +6,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import AIGenerator from "./pages/dashboard/AIGenerator";
 import PortfolioBuilder from "./pages/dashboard/PortfolioBuilder";
 import Overview from "./pages/dashboard/Overview";
+import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/dashboard/Profile";
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
 
         {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route index element={<Overview />} />
           <Route path="profile" element={<Profile />} />
           <Route path="builder" element={<PortfolioBuilder />} />
