@@ -15,7 +15,8 @@
     "express": "^4.22.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^7.0.0",
-    "openai": "^6.39.0"
+    "openai": "^6.39.0",
+    "serverless-http": "^4.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

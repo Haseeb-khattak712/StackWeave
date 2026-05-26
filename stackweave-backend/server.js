@@ -19,7 +19,7 @@ const app = express();
 
 /* ─── CHANGE #1: CORS with explicit frontend origin ─── */
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:3000"],
+  origin: true,
   credentials: true,
 }));
 
@@ -268,3 +268,17 @@ app.get("/api/portfolios", authenticate, async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
 });
+
+/* -----------------------------
+   SERVER START
+------------------------------ */
+const PORT = process.env.PORT || 5000;
+
+// Only start local server if running directly (not on Vercel)
+if (!process.env.VERCEL_ENV) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Backend running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
