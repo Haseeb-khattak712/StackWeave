@@ -25,7 +25,7 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:3000"],
+  origin: allowedOrigins,
   credentials: true,
 }));
 
@@ -270,15 +270,6 @@ app.get("/api/portfolios", authenticate, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch portfolios", details: err.message });
   }
 });
-
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running on http://localhost:${PORT}`);
-});
-
-/* -----------------------------
-   SERVER START
------------------------------- */
-const PORT = process.env.PORT || 5000;
 
 // Only start local server if running directly (not on Vercel)
 if (!process.env.VERCEL_ENV) {
