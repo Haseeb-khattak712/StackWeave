@@ -11,8 +11,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
+ const API_BASE = import.meta.env.VITE_API_URL || '';
+ 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(USER_KEY);
