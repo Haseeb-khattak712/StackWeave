@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import OpenAI from "openai";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import Output from "./models/Output.js";
 import User from "./models/User.js";
 
@@ -34,12 +35,38 @@ const MODELS = [
 ];
 
 /* -----------------------------
-   AUTH ROUTES
+   JWT & AUTH HELPERS
+------------------------------ */
+const JWT_SECRET = process.env.JWT_SECRET || "stackweave_dev_secret_change_in_production";
+
+// Generate token helper
+const generateToken = (userId) => {
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "7d" });
+};
+
+// Auth middleware
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = { id: decoded.id };
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+/* -----------------------------
+   AUTH ROUTES (updated with tokens)
 ------------------------------ */
 app.post("/api/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
     if (!name || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
@@ -53,7 +80,13 @@ app.post("/api/signup", async (req, res) => {
     const user = new User({ name, email, passwordHash });
     await user.save();
 
-    res.json({ success: true, user: { name, email } });
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      token,
+      user: { _id: user._id, name: user.name, email: user.email },
+    });
   } catch (err) {
     console.error("🔥 SIGNUP ERROR:", err);
     res.status(500).json({ error: "Signup failed", details: err.message });
@@ -63,7 +96,6 @@ app.post("/api/signup", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
@@ -78,9 +110,12 @@ app.post("/api/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
 
+    const token = generateToken(user._id);
+
     res.json({
       success: true,
-      user: { name: user.name, email: user.email },
+      token,
+      user: { _id: user._id, name: user.name, email: user.email },
     });
   } catch (err) {
     console.error("🔥 LOGIN ERROR:", err);
@@ -155,32 +190,36 @@ Return ONLY valid JSON:
 });
 
 /* -----------------------------
-   SAVE AI OUTPUT
+   PROTECTED SAVE OUTPUT ROUTE
 ------------------------------ */
-app.post("/api/save-output", async (req, res) => {
+app.post("/api/save-output", authenticate, async (req, res) => {
   try {
-    const saved = await Output.create(req.body);
+    const { profile, projects, generatedContent, modelUsed } = req.body;
+
+    const saved = await Output.create({
+      userId: req.user.id,
+      profile,
+      projects,
+      generatedContent,
+      modelUsed,
+    });
+
     res.json({ success: true, saved });
   } catch (err) {
-    res.status(500).json({
-      error: "Failed to save output",
-      details: err.message,
-    });
+    console.error("🔥 SAVE OUTPUT ERROR:", err);
+    res.status(500).json({ error: "Failed to save output", details: err.message });
   }
 });
 
 /* -----------------------------
-   GET SAVED OUTPUTS
+   GET USER'S OUTPUTS (protected)
 ------------------------------ */
-app.get("/api/outputs", async (req, res) => {
+app.get("/api/outputs", authenticate, async (req, res) => {
   try {
-    const outputs = await Output.find().sort({ createdAt: -1 });
+    const outputs = await Output.find({ userId: req.user.id }).sort({ createdAt: -1 });
     res.json(outputs);
   } catch (err) {
-    res.status(500).json({
-      error: "Failed to fetch outputs",
-      details: err.message,
-    });
+    res.status(500).json({ error: "Failed to fetch outputs", details: err.message });
   }
 });
 

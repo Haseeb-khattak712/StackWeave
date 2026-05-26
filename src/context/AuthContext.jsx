@@ -4,6 +4,7 @@ const AuthContext = createContext();
 
 const USER_KEY = "stackweave_auth_v2";
 const HASH_KEY = "stackweave_pwhash_v2";
+const TOKEN_KEY = "stackweave_token_v2";
 
 const hash = (str) => {
   let h = 0;
@@ -15,24 +16,28 @@ const hash = (str) => {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(USER_KEY);
+      const storedToken = localStorage.getItem(TOKEN_KEY);
       if (stored) {
         setUser(JSON.parse(stored));
+        setToken(storedToken);
       }
     } catch {
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(HASH_KEY);
+      localStorage.removeItem(TOKEN_KEY);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const signup = useCallback((name, email, password) => {
+  const signup = useCallback(async (name, email, password) => {
     setError(null);
     try {
       if (!name || !email || !password) {
@@ -50,10 +55,23 @@ export function AuthProvider({ children }) {
         return false;
       }
 
-      const newUser = { name, email };
-      localStorage.setItem(USER_KEY, JSON.stringify(newUser));
-      localStorage.setItem(HASH_KEY, hash(password));
-      setUser(newUser);
+      const res = await fetch("http://localhost:5000/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Signup failed");
+        return false;
+      }
+
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      localStorage.setItem(TOKEN_KEY, data.token);
+      setUser(data.user);
+      setToken(data.token);
       return true;
     } catch (err) {
       setError("Signup failed. Please try again.");
@@ -61,7 +79,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = useCallback((email, password) => {
+  const login = useCallback(async (email, password) => {
     setError(null);
     try {
       if (!email || !password) {
@@ -69,21 +87,23 @@ export function AuthProvider({ children }) {
         return false;
       }
 
-      const storedRaw = localStorage.getItem(USER_KEY);
-      const storedHash = localStorage.getItem(HASH_KEY);
-      const storedUser = storedRaw ? JSON.parse(storedRaw) : null;
+      const res = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      const success =
-        storedUser &&
-        email === storedUser.email &&
-        hash(password) === storedHash;
+      const data = await res.json();
 
-      if (!success) {
-        setError("Invalid email or password");
+      if (!res.ok) {
+        setError(data.error || "Login failed");
         return false;
       }
 
-      setUser(storedUser);
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      localStorage.setItem(TOKEN_KEY, data.token);
+      setUser(data.user);
+      setToken(data.token);
       return true;
     } catch {
       setError("Login failed. Please try again.");
@@ -94,12 +114,14 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(HASH_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    setToken(null);
     setError(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, signup, login, logout, loading, error, setError }}>
+    <AuthContext.Provider value={{ user, token, signup, login, logout, loading, error, setError }}>
       {children}
     </AuthContext.Provider>
   );

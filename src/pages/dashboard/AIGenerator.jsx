@@ -1,9 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { usePortfolio } from "../../context/PortfolioContext";
 import { generatePortfolio } from "../../services/aigenerator";
 import { loadFromStorage } from "../../services/storage";
 import { saveOutput } from "../../services/saveOutput";
 
 export default function AIGenerator() {
+  const { user, token } = useAuth();
+  const { applyAiContent } = usePortfolio();
+  const navigate = useNavigate();
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,14 +35,26 @@ export default function AIGenerator() {
       ];
 
       // generate AI response
-      const output = await generatePortfolio(profile, projects);
+      const output = await generatePortfolio(profile, projects, token);
 
       // SAVE TO BACKEND
-      await saveOutput({
-        profile,
-        result: output,
-        createdAt: new Date().toISOString(),
+      await saveOutput(
+        {
+          profile,
+          projects,
+          generatedContent: output,
+          modelUsed: output.modelUsed,
+        },
+        token
+      );
+
+      // Apply generated content to the builder and redirect there
+      applyAiContent({
+        bio: output.bio,
+        summary: output.summary,
+        projects: output.projects,
       });
+      navigate("/dashboard/builder");
 
       setResult(output);
     } catch (err) {
