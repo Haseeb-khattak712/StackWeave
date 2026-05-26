@@ -16,8 +16,20 @@ mongoose
   .catch((err) => console.log("🔴 MongoDB error:", err));
 
 const app = express();
-app.use(cors());
+
+/* ─── CHANGE #1: CORS with explicit frontend origin ─── */
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true,
+}));
+
 app.use(express.json());
+
+/* ─── CHANGE #2: Request logging (add this here) ─── */
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, req.body);
+  next();
+});
 
 /* -----------------------------
    GROQ CLIENT (OpenAI compatible)
@@ -39,12 +51,10 @@ const MODELS = [
 ------------------------------ */
 const JWT_SECRET = process.env.JWT_SECRET || "stackweave_dev_secret_change_in_production";
 
-// Generate token helper
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "7d" });
 };
 
-// Auth middleware
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -62,7 +72,7 @@ const authenticate = (req, res, next) => {
 };
 
 /* -----------------------------
-   AUTH ROUTES (updated with tokens)
+   AUTH ROUTES
 ------------------------------ */
 app.post("/api/signup", async (req, res) => {
   try {
@@ -90,6 +100,16 @@ app.post("/api/signup", async (req, res) => {
   } catch (err) {
     console.error("🔥 SIGNUP ERROR:", err);
     res.status(500).json({ error: "Signup failed", details: err.message });
+  }
+});
+
+// Admin: list all users (remove this in production!)
+app.get("/api/admin/users", async (req, res) => {
+  try {
+    const users = await User.find({}, "name email createdAt").sort({ createdAt: -1 });
+    res.json({ count: users.length, users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -226,7 +246,24 @@ app.get("/api/outputs", authenticate, async (req, res) => {
 /* -----------------------------
    SERVER START
 ------------------------------ */
+app.get("/api/debug/outputs", async (req, res) => {
+  const outputs = await Output.find().limit(5);
+  res.json({ count: outputs.length, outputs });
+});
+
 const PORT = process.env.PORT || 5000;
+
+/* -----------------------------
+   PORTFOLIOS ALIAS (reads from outputs collection)
+------------------------------ */
+app.get("/api/portfolios", authenticate, async (req, res) => {
+  try {
+    const portfolios = await Output.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    res.json(portfolios);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch portfolios", details: err.message });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);

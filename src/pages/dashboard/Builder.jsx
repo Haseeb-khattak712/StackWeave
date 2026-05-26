@@ -5,9 +5,10 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
 export default function Builder() {
-  const { user } = useAuth();
+  const { user, token } = useAuth(); // ← GET TOKEN FROM AUTH CONTEXT
   const navigate = useNavigate();
   const previewRef = useRef(null);
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   // ─── LAYOUT ───
   const [layout, setLayout] = useState("modern");
@@ -148,20 +149,22 @@ export default function Builder() {
   };
   const toggleSection = (key) => setVisible((v) => ({ ...v, [key]: !v[key] }));
 
-  // ─── AI ENHANCE (INLINE — no navigation loop) ───
+  // ─── AI ENHANCE (INLINE) ───
   const [aiLoading, setAiLoading] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const enhanceWithAI = async () => {
-    const token = localStorage.getItem("stackweave_token");
+    if (!token) {
+      alert("❌ Please login first to use AI features");
+      return;
+    }
     setAiLoading(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
       const res = await fetch(`${API_BASE}/api/generate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           profile: { name: portfolio.name, title: portfolio.title, bio: portfolio.bio },
@@ -187,7 +190,7 @@ export default function Builder() {
     }
   };
 
-  // ─── EXPORT PDF (FIXED) ───
+  // ─── EXPORT PDF ───
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const exportPDF = async () => {
@@ -226,8 +229,10 @@ export default function Builder() {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const saveToBackend = async () => {
-    const token = localStorage.getItem("stackweave_token");
-    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    if (!token) {
+      alert("❌ Please login first to save your portfolio");
+      return;
+    }
 
     setSaveLoading(true);
     try {
@@ -235,7 +240,7 @@ export default function Builder() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           userId: user?._id,
@@ -256,7 +261,7 @@ export default function Builder() {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server returned ${res.status}`);
+        throw new Error(errorData.error || errorData.details || `Server returned ${res.status}`);
       }
 
       const data = await res.json();
@@ -309,7 +314,7 @@ export default function Builder() {
             </button>
           </div>
 
-          {/* ─── AI PANEL (INLINE — no routing loop) ─── */}
+          {/* ─── AI PANEL ─── */}
           {aiPanelOpen && (
             <div className="p-4 rounded-xl bg-white/5 border border-purple-500/30 space-y-3">
               <h3 className="text-sm font-semibold text-purple-300 uppercase tracking-wider">AI Enhancement</h3>

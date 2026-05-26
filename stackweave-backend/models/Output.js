@@ -14,6 +14,8 @@ const outputSchema = new mongoose.Schema({
   projects: [{
     title: String,
     desc: String,
+    tech: [String],
+    link: String,
   }],
   generatedContent: {
     bio: String,
@@ -25,6 +27,6 @@ const outputSchema = new mongoose.Schema({
   },
   modelUsed: String,
   createdAt: { type: Date, default: Date.now },
-});
+}, { collection: 'portfolios' });  // ← ADD THIS
 
 export default mongoose.model("Output", outputSchema);

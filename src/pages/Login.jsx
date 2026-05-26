@@ -12,7 +12,6 @@ export default function Login() {
   const [localError, setLocalError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Show logout success message if redirected from logout
   useEffect(() => {
     if (location.state?.message) {
       setSuccessMessage(location.state.message);
@@ -20,7 +19,7 @@ export default function Login() {
     }
   }, [location.state]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {  // ← ADD async HERE
     e.preventDefault();
     setLocalError("");
     setError(null);
@@ -30,7 +29,7 @@ export default function Login() {
       return;
     }
 
-    const success = login(email, password);
+    const success = await login(email, password);  // ← ADD await HERE
 
     if (success) {
       navigate("/dashboard", { replace: true });
@@ -45,7 +44,6 @@ export default function Login() {
     );
   }
 
-  // If already logged in, show welcome card
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -82,14 +80,12 @@ export default function Login() {
       >
         <h1 className="text-3xl font-bold mb-6 text-white">Login</h1>
 
-        {/* Success Message */}
         {successMessage && (
           <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 text-sm">
             ✓ {successMessage}
           </div>
         )}
 
-        {/* Error Messages */}
         {(error || localError) && (
           <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
             {error || localError}
